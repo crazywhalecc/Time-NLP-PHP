@@ -20,6 +20,7 @@ class StringPreHandler
      * @return string
      */
     public static function numberTranslator($target) {
+        //debug("数字翻译中...初始结果：[$target]");
         $pattern = "/[一二两三四五六七八九123456789]万[一二两三四五六七八九123456789](?!(千|百|十))/u";
         preg_match_all($pattern, $target, $match);
         foreach ($match[0] as $v) {
@@ -127,6 +128,7 @@ class StringPreHandler
             }
             $target = preg_replace($pattern, strval($num), $target, 1);
         }
+        //debug("数字翻译完成，翻译结果：[$target]");
         return $target;
     }
 
@@ -182,4 +184,16 @@ class StringPreHandler
      * 清理工作完成后的字符串
      */
     public static function delKeyword($target, $rules) { return preg_replace($rules, '', $target); }
+
+    public static function matchPattern($pattern, $context) {
+        if (mb_substr($pattern, 0, 1) == "" && mb_substr($context, 0, 1) == "")
+            return true;
+        if ('*' == mb_substr($pattern, 0, 1) && "" != mb_substr($pattern, 1, 1) && "" == mb_substr($context, 0, 1))
+            return false;
+        if (mb_substr($pattern, 0, 1) == mb_substr($context, 0, 1))
+            return self::matchPattern(mb_substr($pattern, 1), mb_substr($context, 1));
+        if (mb_substr($pattern, 0, 1) == "*")
+            return self::matchPattern(mb_substr($pattern, 1), $context) || self::matchPattern($pattern, mb_substr($context, 1));
+        return false;
+    }
 }
