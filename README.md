@@ -10,7 +10,7 @@ Time-NLP 的 Java 版本 https://github.com/shinyke/Time-NLP
 
 ## 功能说明
 本项目不依赖其他第三方库，运行环境推荐PHP7-cli以上。
-```php
+```bash
 php test.php
 php test.php --debug
 # debug模式会sleep等待显示解析过程
