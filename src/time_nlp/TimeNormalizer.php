@@ -31,15 +31,19 @@ class TimeNormalizer
     private $old_time_base;
     private $time_token;
 
+    public function __toString() {
+        return "{ time_span:\"{$this->time_span}\", target: \"{$this->target}\", time_base: {$this->time_base} }";
+    }
+
     public function __construct($is_prefer_future = true) {
         $this->is_prefer_future = $is_prefer_future;
         $this->init();
     }
 
     private function init() {
-        $this->pattern = file_get_contents(__DIR__."/../../resource/regex.txt");
-        $this->holi_solar = json_decode(file_get_contents(__DIR__."/../../resource/holi_solar.json"), true);
-        $this->holi_lunar = json_decode(file_get_contents(__DIR__."/../../resource/holi_lunar.json"), true);
+        $this->pattern = file_get_contents(__DIR__ . "/../../resource/regex.txt");
+        $this->holi_solar = json_decode(file_get_contents(__DIR__ . "/../../resource/holi_solar.json"), true);
+        $this->holi_lunar = json_decode(file_get_contents(__DIR__ . "/../../resource/holi_lunar.json"), true);
     }
 
     public function _filter($input_query) {
@@ -132,14 +136,17 @@ class TimeNormalizer
         $this->target = StringPreHandler::delKeyword($this->target, "/\\s+/u");
         $this->target = StringPreHandler::delKeyword($this->target, "/[的]+/u");
         $this->target = StringPreHandler::numberTranslator($this->target);
+        debug("带匹配字符串的清理空白符等大写数字转化的预处理, 结果是[{$this->target}]");
     }
 
     private function __timeEx() {
+        debug("正在解析token中...");
         $endline = -1;
         $repointer = 0;
         $temp = [];
 
         preg_match_all($this->pattern, $this->target, $match, PREG_OFFSET_CAPTURE);
+        debug("匹配到了" . count($match[0]) . "个token");
         foreach ($match[0] as $v) {
             $startline = $v[1];
             if ($startline == $endline) {
@@ -156,6 +163,7 @@ class TimeNormalizer
         $res = [];
         // 时间上下文： 前一个识别出来的时间会是下一个时间的上下文，用于处理：周六3点到5点这样的多个时间的识别，第二个5点应识别到是周六的。
         $context_tp = new TimePoint();
+        debug("准备开始新建时间点, 共 $repointer 个repointer");
         for ($i = 0; $i < $repointer; ++$i) {
             $res[] = (new TimeUnit($temp[$i], $this, $context_tp));
             $context_tp = $res[$i]->tp;

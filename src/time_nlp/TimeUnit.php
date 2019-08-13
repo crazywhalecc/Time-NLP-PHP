@@ -46,6 +46,7 @@ class TimeUnit
      * @param TimePoint $context_tp
      */
     public function __construct($exp_time, TimeNormalizer $normalizer, TimePoint $context_tp) {
+        debug("正在构建时间单元 for $exp_time");
         $this->no_year = false;
         $this->exp_time = $exp_time;
         $this->normalizer = $normalizer;
@@ -58,6 +59,7 @@ class TimeUnit
     }
 
     private function timeNormalization() {
+        debug("正在Normalization中");
         $this->normSetYear();
         $this->normSetMonth();
         $this->normSetDay();
@@ -97,13 +99,24 @@ class TimeUnit
                 $this->normalizer->invalid_span = true;
             }
             $this->normalizer->time_span = $this->genSpan($days, $seconds);
+            return;
         }
+        $time_grid = explode("-", $this->normalizer->time_base);
+        $tunit_pointer = 5;
+        while ($tunit_pointer >= 0 && $this->tp->tunit[$tunit_pointer] < 0) {
+            $tunit_pointer -= 1;
+        }
+        for ($i = 0; $i < $tunit_pointer; ++$i) {
+            if ($this->tp->tunit[$i] < 0) $this->tp->tunit[$i] = intval($time_grid[$i]);
+        }
+        $this->time = $this->genTime($this->tp->tunit);
     }
 
     /**
      * 年-规范化方法--该方法识别时间表达式单元的年字段
      */
     private function normSetYear() {
+        debug("TUnit for year start {$this->tp->tunit[0]}");
         //一位数表示的年份
         $rule = "/(?<![0-9])[0-9]{1}(?=年)/u";
         preg_match_all($rule, $this->exp_time, $match);
@@ -134,12 +147,14 @@ class TimeUnit
             $year = intval($match[0][0]);
             $this->tp->tunit[0] = $year;
         }
+        debug("TUnit for year end {$this->tp->tunit[0]}");
     }
 
     /**
      * 月-规范化方法--该方法识别时间表达式单元的月字段
      */
     private function normSetMonth() {
+        debug("TUnit for month start {$this->tp->tunit[1]}");
         $rule = "/((10)|(11)|(12)|([1-9]))(?=月)/u";
         preg_match_all($rule, $this->exp_time, $match);
         if ($match[0] != []) {
@@ -147,6 +162,7 @@ class TimeUnit
             //处理倾向于未来时间的情况
             $this->preferFuture(1);
         }
+        debug("TUnit for month end {$this->tp->tunit[1]}");
     }
 
     /**
@@ -239,6 +255,7 @@ class TimeUnit
      * 日-规范化方法：该方法识别时间表达式单元的日字段
      */
     private function normSetDay() {
+        debug("TUnit for day start {$this->tp->tunit[2]}");
         $rule = "/((?<!\d))([0-3][0-9]|[1-9])(?=(日|号))/u";
         preg_match_all($rule, $this->exp_time, $match);
         if ($match[0] != []) {
@@ -247,6 +264,7 @@ class TimeUnit
             $this->preferFuture(2);
             $this->_check_time($this->tp->tunit);
         }
+        debug("TUnit for day end {$this->tp->tunit[2]}");
     }
 
     /**
@@ -269,6 +287,7 @@ class TimeUnit
      * 月-日 兼容模糊写法：该方法识别时间表达式单元的月、日字段
      */
     private function normDetMonthFuzzyDay() {
+        debug("TUnit for fuzzyDay start: " . $this->tp);
         $rule = "/((10)|(11)|(12)|([1-9]))(月|\\.|\\-)([0-3][0-9]|[1-9])/u";
         preg_match_all($rule, $this->exp_time, $match);
         if ($match[0] != []) {
@@ -287,12 +306,14 @@ class TimeUnit
             }
             $this->_check_time($this->tp->tunit);
         }
+        debug("TUnit for fuzzyDay end: " . $this->tp);
     }
 
     /**
      * 设置当前时间相关的时间表达式
      */
     private function normSetCurRelated() {
+        debug("设置时间相关的表达式中..." . $this->tp);
         $cur = $this->normalizer->time_base;
         $flag = [false, false, false];
 
@@ -417,6 +438,7 @@ class TimeUnit
         if ($flag[2]) {
             $this->tp->tunit[2] = intval($this->getDay($cur));
         }
+        debug("处理完成！" . $this->tp);
     }
 
     private function isAToB($num, $a, $b) {
@@ -855,6 +877,21 @@ class TimeUnit
         $h = intval(($seconds % (3600 * 24)) / 3600);
         $m = intval((($seconds % (3600 * 24)) % 3600) / 60);
         $s = intval((($seconds % (3600 * 24)) % 3600) % 60);
-        return strval($days + $day)." days, ".sprintf("%d:%02d:%02d", $h, $m, $s);
+        return strval($days + $day) . " days, " . sprintf("%d:%02d:%02d", $h, $m, $s);
+    }
+
+    private function genTime($tunit) {
+        $time = [1970, 1, 1, 0, 0, 0];
+        if ($tunit[0] > 0) $time[0] = intval($tunit[0]);
+        if ($tunit[1] > 0) $time[1] = intval($tunit[1]);
+        if ($tunit[2] > 0) $time[2] = intval($tunit[2]);
+        if ($tunit[3] > 0) $time[3] = intval($tunit[3]);
+        if ($tunit[4] > 0) $time[4] = intval($tunit[4]);
+        if ($tunit[5] > 0) $time[5] = intval($tunit[5]);
+        $a = new DateTime();
+        $a->setDate($time[0], $time[1], $time[2]);
+        $a->setTime($time[3], $time[4], $time[5]);
+        $a->setTimezone(new DateTimeZone("Asia/Shanghai"));
+        return $a->getTimestamp();
     }
 }

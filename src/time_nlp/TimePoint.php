@@ -15,4 +15,8 @@ class TimePoint
         $this->tunit = [-1, -1, -1, -1, -1, -1];
     }
 
+    public function __toString() {
+        return "{" .implode(", ", $this->tunit)."}";
+    }
+
 }
