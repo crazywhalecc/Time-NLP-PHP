@@ -6,6 +6,7 @@ namespace time_nlp;
 
 use DateTime;
 use DateTimeZone;
+use Exception;
 
 class TimeUnit
 {
@@ -44,6 +45,7 @@ class TimeUnit
      * @param $exp_time
      * @param TimeNormalizer $normalizer
      * @param TimePoint $context_tp
+     * @throws Exception
      */
     public function __construct($exp_time, TimeNormalizer $normalizer, TimePoint $context_tp) {
         debug("正在构建时间单元 for $exp_time");
@@ -109,7 +111,11 @@ class TimeUnit
         for ($i = 0; $i < $tunit_pointer; ++$i) {
             if ($this->tp->tunit[$i] < 0) $this->tp->tunit[$i] = intval($time_grid[$i]);
         }
-        $this->time = $this->genTime($this->tp->tunit);
+        try {
+            $this->time = $this->genTime($this->tp->tunit);
+        } catch (Exception $e) {
+            $this->normalizer->invalid_span = true;
+        }
     }
 
     /**
@@ -393,7 +399,7 @@ class TimeUnit
                 $ot = $dt->format("N") - 1;
                 $span = $week - $ot;
                 $cur = $this->modify($cur, "-" . mb_substr_count($this->exp_time, "上") . " week");
-                $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ("-" . $span . " day")));
+                $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ($span . " day")));
             } elseif (mb_substr($this->exp_time, $pos + 2, 2) == "星期") {
                 $week = $this->isAToB(($num = mb_substr($this->exp_time, $pos + 5, 1)), 1, 7) ? intval($num) : 1;
                 $flag[2] = true;
@@ -402,7 +408,7 @@ class TimeUnit
                 $ot = $dt->format("N") - 1;
                 $span = $week - $ot;
                 $cur = $this->modify($cur, "-" . mb_substr_count($this->exp_time, "上") . " week");
-                $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ("-" . $span . " day")));
+                $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ($span . " day")));
             }
         }
         if ((($pos = mb_strpos($this->exp_time, "上周")) !== false ||
@@ -424,10 +430,65 @@ class TimeUnit
             $ot = $dt->format("N") - 1;
             $span = $week - $ot;
             $cur = $this->modify($cur, "-1 week");
-            $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ("-" . $span . " day")));
+            $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ($span . " day")));
         }
 
         //TODO: 下周，下下周，周x 的处理，稍后再说
+        preg_match_all("/(?<=((?<!下)下星期))[1-7]?/u", $this->exp_time, $match);
+        preg_match_all("/(?<=((?<!下)下周))[1-7]?/u", $this->exp_time, $match2);
+        if ($match[0] != [] || $match2[0] != []) {
+            $matched = $match[0] == [] ? $match2[0] : $match[0];
+            //echo "Matched: $matched[0]\n";
+            $flag[2] = true;
+            if ($matched[0] == "") $week = 1;
+            else $week = intval($matched[0]);
+            $week -= 1;
+            $dt = DateTime::createFromFormat("Y-n-j-H-i-s", $cur);
+            $ot = $dt->format("N") - 1;
+            $span = $week - $ot;
+            //echo "Current: $cur\n";
+            $cur = $this->modify($cur, "+1 week");
+            //echo "Target: $cur\nSpan: $span\n";
+            $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ($span . " day")));
+            //echo "Final: $cur\n";
+        }
+
+        if (($pos = mb_strpos($this->exp_time, "下下")) !== false) {
+            if (mb_substr($this->exp_time, $pos + 2, 1) == "周") {
+                $week = $this->isAToB(($num = mb_substr($this->exp_time, $pos + 3, 1)), 1, 7) ? intval($num) : 1;
+                $flag[2] = true;
+                $week -= 1;
+                $dt = DateTime::createFromFormat("Y-n-j-H-i-s", $cur);
+                $ot = $dt->format("N") - 1;
+                $span = $week - $ot;
+                $cur = $this->modify($cur, "+" . mb_substr_count($this->exp_time, "下") . " week");
+                $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ($span . " day")));
+            } elseif (mb_substr($this->exp_time, $pos + 2, 2) == "星期") {
+                $week = $this->isAToB(($num = mb_substr($this->exp_time, $pos + 5, 1)), 1, 7) ? intval($num) : 1;
+                $flag[2] = true;
+                $week -= 1;
+                $dt = DateTime::createFromFormat("Y-n-j-H-i-s", $cur);
+                $ot = $dt->format("N") - 1;
+                $span = $week - $ot;
+                $cur = $this->modify($cur, "+" . mb_substr_count($this->exp_time, "下") . " week");
+                $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ($span . " day")));
+            }
+        }
+
+        preg_match_all("/(?<=((?<!(上|下|个|[0-9]))(星期)))[1-7]/u", $this->exp_time, $match);
+        preg_match_all("/(?<=((?<!(上|下|个|[0-9]))(周)))[1-7]/u", $this->exp_time, $match2);
+        if ($match[0] != [] || $match2[0] != []) {
+            $matched = $match[0] == [] ? $match2[0] : $match[0];
+            $flag[2] = true;
+            if ($matched[0] != "") $week = intval($matched[0]);
+            else $week = 1;
+            $week -= 1;
+            $dt = DateTime::createFromFormat("Y-n-j-H-i-s", $cur);
+            $ot = $dt->format("N") - 1;
+            $span = $week - $ot;
+            $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ($span . " day")));
+            $cur = $this->preferFutureWeek($week, $cur);
+        }
 
         if ($flag[0] || $flag[1] || $flag[2]) {
             $this->tp->tunit[0] = intval($this->getYear($cur));
@@ -893,5 +954,18 @@ class TimeUnit
         $a->setTime($time[3], $time[4], $time[5]);
         $a->setTimezone(new DateTimeZone("Asia/Shanghai"));
         return $a->getTimestamp();
+    }
+
+    private function preferFutureWeek($weekday, $cur) {
+        if (!$this->normalizer->is_prefer_future) return $cur;
+        for ($i = 0; $i < 2; ++$i) {
+            if ($this->tp->tunit[$i] != -1) return $cur;
+        }
+        $tmp = $this->normalizer->time_base;
+        $dt = DateTime::createFromFormat("Y-n-j-H-i-s", $tmp);
+        $ot = $dt->format("N") - 1;
+        $cur_weekday = $ot;
+        if ($cur_weekday > $weekday) $cur = $this->modify($cur, "+7 day");
+        return $cur;
     }
 }
