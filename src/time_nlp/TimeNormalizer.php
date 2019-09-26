@@ -49,7 +49,7 @@ class TimeNormalizer
     public function _filter($input_query) {
         debug("这里对一些不规范的表达做转换, origin: [$input_query]", 0);
         $input_query = StringPreHandler::numberTranslator($input_query);
-
+        //debug($input_query);
         $rule = "/[0-9]月[0-9]/u";
         preg_match_all($rule, $input_query, $match);
         if ($match[0] != []) {
@@ -69,7 +69,7 @@ class TimeNormalizer
                 }
             }
         }
-        if (mb_strpos($input_query, "月") === false) {
+        if (mb_strpos($input_query, "月") === false && mb_strpos($input_query, "个半") === false) {
             $input_query = str_replace("个", "", $input_query);
         }
         $a = ["中旬", "傍晚", "大年", "五一", "白天", "："];
@@ -126,7 +126,7 @@ class TimeNormalizer
                 $dic["timespan"] = [date("Y-m-d H:i:s", $res[0]->time), date("Y-m-d H:i:s", $res[1]->time)];
             }
         }
-        return json_encode($dic, JSON_UNESCAPED_UNICODE, JSON_PRETTY_PRINT);
+        return json_encode($dic, JSON_UNESCAPED_UNICODE);
     }
 
     /**
@@ -147,6 +147,7 @@ class TimeNormalizer
 
         preg_match_all($this->pattern, $this->target, $match, PREG_OFFSET_CAPTURE);
         debug("匹配到了" . count($match[0]) . "个token");
+        var_dump($match[0]);
         foreach ($match[0] as $v) {
             $startline = $v[1];
             if ($startline == $endline) {
@@ -188,5 +189,19 @@ class TimeNormalizer
             }
         }
         return $res;
+    }
+
+    public function toStamp($origin) {
+        $dt = \DateTime::createFromFormat("Y-m-d H:i:s", $origin, new \DateTimeZone("Asia/Shanghai"));
+        return $dt->getTimestamp();
+    }
+
+    public function getStampByDelta($delta, $current_time) {
+        $dt = new \DateTime();
+        $dt->setTimestamp($current_time);
+        foreach($delta as $k => $v) {
+            $dt->modify("+".$v." ".$k);
+        }
+        return $dt->getTimestamp();
     }
 }

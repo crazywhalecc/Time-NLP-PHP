@@ -433,7 +433,6 @@ class TimeUnit
             $cur = $this->modify($cur, ($span >= 0 ? ("+" . $span . " day") : ($span . " day")));
         }
 
-        //TODO: 下周，下下周，周x 的处理，稍后再说
         preg_match_all("/(?<=((?<!下)下星期))[1-7]?/u", $this->exp_time, $match);
         preg_match_all("/(?<=((?<!下)下周))[1-7]?/u", $this->exp_time, $match2);
         if ($match[0] != [] || $match2[0] != []) {
@@ -775,6 +774,23 @@ class TimeUnit
             $minute = intval($match[0][0]);
             $this->tp->tunit[4] = $minute;
         }
+        preg_match_all("/\d+(?=(个半)?小时(?![以之]?[前后]))/u", $this->exp_time, $match);
+        if($match[0] != []) {
+            $this->normalizer->is_time_span = true;
+            $minute = 30;
+            $hour = intval($match[0][0]);
+            $this->tp->tunit[4] = $minute;
+            $this->tp->tunit[3] = $hour;
+            $key = true;
+        }
+
+        preg_match_all("/半(?=(个)?小时(?![以之]?[前后]))/u", $this->exp_time, $match);
+        if($match[0] != [] && !isset($key)) {
+            $this->normalizer->is_time_span = true;
+            $minute = 30;
+            $this->tp->tunit[4] = $minute;
+        }
+
         preg_match_all("/\d+(?=秒钟(?![以之]?[前后]))/u", $this->exp_time, $match);
         if ($match[0] != []) {
             $this->normalizer->is_time_span = true;
