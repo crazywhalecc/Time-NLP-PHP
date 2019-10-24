@@ -4,6 +4,9 @@
 namespace time_nlp;
 
 
+use DateTime;
+use DateTimeZone;
+
 class TimeNormalizer
 {
     /**
@@ -146,8 +149,8 @@ class TimeNormalizer
         $temp = [];
 
         preg_match_all($this->pattern, $this->target, $match, PREG_OFFSET_CAPTURE);
-        debug("匹配到了" . count($match[0]) . "个token");
-        var_dump($match[0]);
+        debug("匹配到了" . count($match[0]) . "个token。");
+        //var_dump($match[0]);
         foreach ($match[0] as $v) {
             $startline = $v[1];
             if ($startline == $endline) {
@@ -166,6 +169,7 @@ class TimeNormalizer
         $context_tp = new TimePoint();
         debug("准备开始新建时间点, 共 $repointer 个repointer");
         for ($i = 0; $i < $repointer; ++$i) {
+            if(mb_substr($temp[$i], -2) == "天后") $temp[$i] = mb_substr($temp[$i], 0, -1);
             $res[] = (new TimeUnit($temp[$i], $this, $context_tp));
             $context_tp = $res[$i]->tp;
         }
@@ -192,12 +196,12 @@ class TimeNormalizer
     }
 
     public function toStamp($origin) {
-        $dt = \DateTime::createFromFormat("Y-m-d H:i:s", $origin, new \DateTimeZone("Asia/Shanghai"));
+        $dt = DateTime::createFromFormat("Y-m-d H:i:s", $origin, new DateTimeZone("Asia/Shanghai"));
         return $dt->getTimestamp();
     }
 
     public function getStampByDelta($delta, $current_time) {
-        $dt = new \DateTime();
+        $dt = new DateTime();
         $dt->setTimestamp($current_time);
         foreach($delta as $k => $v) {
             $dt->modify("+".$v." ".$k);

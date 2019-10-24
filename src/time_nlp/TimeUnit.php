@@ -524,8 +524,8 @@ class TimeUnit
      * 时-规范化方法：该方法识别时间表达式单元的时字段
      */
     private function normSetHour() {
-        preg_match_all("/(?<!(星期))([0-2]?[0-9])(?=(点|时))/u", $this->exp_time, $match);
-        if ($match[0] == []) preg_match_all("/(?<!(周))([0-2]?[0-9])(?=(点|时))/u", $this->exp_time, $match);
+        preg_match_all("/(?<!(星期))([0-2]?[0-9])(?=([点时]))/u", $this->exp_time, $match);
+        if ($match[0] == []) preg_match_all("/(?<!(周))([0-2]?[0-9])(?=([点时]))/u", $this->exp_time, $match);
         if ($match[0] != []) {
             $this->tp->tunit[3] = intval($match[0][0]);
             $this->checkSubHour();
@@ -583,7 +583,7 @@ class TimeUnit
             $this->preferFuture(3);
             $this->is_all_day_time = false;
         }
-        preg_match_all("/晚上|夜间|夜里|今晚|明晚|晚|夜里/u", $this->exp_time, $match);
+        preg_match_all("/晚上|夜间|今晚|明晚|晚|夜里/u", $this->exp_time, $match);
         if ($match[0] != []) {
             if ($this->tp->tunit[3] >= 0 && $this->tp->tunit[3] <= 11)
                 $this->tp->tunit[3] += 12;
@@ -643,7 +643,7 @@ class TimeUnit
         //Problem: Python版这里使用了非固定长度的断言，PCRE不支持。
         //但发现好像这里原来的(?<!(周|星期))这处断言似乎是没什么影响的，就去掉了。
         //但说起来逻辑可以改得更简单一点，减少一些重复的代码。这里挖个坑,TODO.
-        preg_match_all("/(晚上|夜间|夜里|今晚|明晚|晚|夜里|下午|午后)([0-2]?[0-9]):[0-5]?[0-9]:[0-5]?[0-9]/u", $this->exp_time, $match);
+        preg_match_all("/(晚上|夜间|夜里|今晚|明晚|晚|下午|午后)([0-2]?[0-9]):[0-5]?[0-9]:[0-5]?[0-9]/u", $this->exp_time, $match);
         if ($match[0] != []) {
             preg_match_all("/([0-2]?[0-9]):[0-5]?[0-9]:[0-5]?[0-9]/u", $this->exp_time, $match);
             $tmp_target = $match[0][0];
@@ -657,7 +657,7 @@ class TimeUnit
             $this->preferFuture(3);
             $this->is_all_day_time = false;
         } else {
-            preg_match_all("/(晚上|夜间|夜里|今晚|明晚|晚|夜里|下午|午后)([0-2]?[0-9]):[0-5]?[0-9]/u", $this->exp_time, $match);
+            preg_match_all("/(晚上|夜间|夜里|今晚|明晚|晚|下午|午后)([0-2]?[0-9]):[0-5]?[0-9]/u", $this->exp_time, $match);
             if ($match[0] != []) {
                 preg_match_all("/([0-2]?[0-9]):[0-5]?[0-9]/u", $this->exp_time, $match);
                 $tmp_target = $match[0][0];
@@ -673,7 +673,7 @@ class TimeUnit
         }
         if ($match[0] != []) {
             //周和星期的不同长度断言在pcre中不能使，所以直接判断周/期
-            preg_match_all("/(?<!(周|期))([0-2]?[0-9]):[0-5]?[0-9]:[0-5]?[0-9](PM|pm|p\.m)/u", $this->exp_time, $match);
+            preg_match_all("/(?<!([周期]))([0-2]?[0-9]):[0-5]?[0-9]:[0-5]?[0-9](PM|pm|p\.m)/u", $this->exp_time, $match);
             if ($match[0] != []) {
                 preg_match_all("/([0-2]?[0-9]):[0-5]?[0-9]:[0-5]?[0-9]/u", $this->exp_time, $match);
                 $tmp_target = $match[0][0];
@@ -688,7 +688,7 @@ class TimeUnit
                 $this->preferFuture(3);
                 $this->is_all_day_time = false;
             } else {
-                preg_match_all("/(?<!(周|期))([0-2]?[0-9]):[0-5]?[0-9](PM|pm|p.m)/u", $this->exp_time, $match);
+                preg_match_all("/(?<!([周期]))([0-2]?[0-9]):[0-5]?[0-9](PM|pm|p.m)/u", $this->exp_time, $match);
                 if ($match[0] != []) {
                     preg_match_all("/([0-2]?[0-9]):[0-5]?[0-9]/u", $this->exp_time, $match);
                     $tmp_parser = explode(":", $match[0][0]);
@@ -703,8 +703,8 @@ class TimeUnit
             }
         }
         if ($match[0] != []) {
-            preg_match_all("/(?<!(星期|晚上|夜间|夜里|今晚|明晚|夜里|下午|午后))([0-2]?[0-9]):[0-5]?[0-9]:[0-5]?[0-9]/u", $this->exp_time, $match1);
-            preg_match_all("/(?<!(周|晚))([0-2]?[0-9]):[0-5]?[0-9]:[0-5]?[0-9]/u", $this->exp_time, $match2);
+            preg_match_all("/(?<!(星期|晚上|夜间|今晚|明晚|夜里|下午|午后))([0-2]?[0-9]):[0-5]?[0-9]:[0-5]?[0-9]/u", $this->exp_time, $match1);
+            preg_match_all("/(?<!([周晚]))([0-2]?[0-9]):[0-5]?[0-9]:[0-5]?[0-9]/u", $this->exp_time, $match2);
             if ($match1[0] != [] && $match2[0] != [] && $match1[0][0] == $match2[0][0]) {
                 $tmp_parser = explode(":", $match1[0][0]);
                 $this->tp->tunit[3] = intval($tmp_parser[0]);
@@ -713,8 +713,8 @@ class TimeUnit
                 $this->preferFuture(3);
                 $this->is_all_day_time = false;
             } else {
-                preg_match_all("/(?<!(星期|晚上|夜间|夜里|今晚|明晚|夜里|下午|午后))([0-2]?[0-9]):[0-5]?[0-9]/u", $this->exp_time, $match1);
-                preg_match_all("/(?<!(周|晚))([0-2]?[0-9]):[0-5]?[0-9]/u", $this->exp_time, $match2);
+                preg_match_all("/(?<!(星期|晚上|夜间|今晚|明晚|夜里|下午|午后))([0-2]?[0-9]):[0-5]?[0-9]/u", $this->exp_time, $match1);
+                preg_match_all("/(?<!([周晚]))([0-2]?[0-9]):[0-5]?[0-9]/u", $this->exp_time, $match2);
                 if ($match1[0] != [] && $match2[0] != [] && $match1[0][0] == $match2[0][0]) {
                     $tmp_parser = explode(":", $match1[0][0]);
                     $this->tp->tunit[3] = intval($tmp_parser[0]);
@@ -748,6 +748,7 @@ class TimeUnit
      * 设置时间长度相关的时间表达式
      */
     private function normSetSpanRelated() {
+        debug("设置时间长度相关的时间表达式... ".$this->exp_time);
         preg_match_all("/\d+(?=个月(?![以之]?[前后]))/u", $this->exp_time, $match);
         if ($match[0] != []) {
             $this->normalizer->is_time_span = true;
@@ -774,7 +775,7 @@ class TimeUnit
             $minute = intval($match[0][0]);
             $this->tp->tunit[4] = $minute;
         }
-        preg_match_all("/\d+(?=(个半)?小时(?![以之]?[前后]))/u", $this->exp_time, $match);
+        preg_match_all("/\d+(?=(个半)小时(?![以之]?[前后]))/u", $this->exp_time, $match);
         if($match[0] != []) {
             $this->normalizer->is_time_span = true;
             $minute = 30;
@@ -797,7 +798,7 @@ class TimeUnit
             $second = intval($match[0][0]);
             $this->tp->tunit[5] = $second;
         }
-        preg_match_all("/\d+(?=(个)?(周|星期|礼拜)(?![以之]?[前后]))/u", $this->exp_time, $match);
+        preg_match_all("/\d+(?=(个)(周|星期|礼拜)(?![以之]?[前后]))/u", $this->exp_time, $match);
         if ($match[0] != []) {
             $this->normalizer->is_time_span = true;
             $week = intval($match[0][0]);

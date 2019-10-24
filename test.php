@@ -10,7 +10,7 @@ echo "Initialized successfully!\n";
 while (($str = trim(fgets(STDIN))) != "exit") {
     //$as = microtime(true);
     try {
-        echo $a->parse($str) . PHP_EOL;
+        echo ($ss = $a->parse($str)) . PHP_EOL;
     } catch (Exception $e) {
         echo "Error!\n";
     }
