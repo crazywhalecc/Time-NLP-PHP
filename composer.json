@@ -15,7 +15,7 @@
   },
   "autoload": {
     "psr-4": {
-      "crazywhalecc\\time-nlp\\": "src/"
+      "time_nlp\\": "src/time_nlp"
     }
   }
 }
