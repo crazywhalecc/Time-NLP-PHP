@@ -1,0 +1,21 @@
+{
+  "name": "crazywhalecc/time-nlp",
+  "description": "Time NLP composer project",
+  "keywords": ["time-nlp", "crazywhalecc", "zhamao"],
+  "authors": [
+    {
+      "name": "crazywhalecc",
+      "email": "admin@zhamao.me",
+      "homepage": "https://github.com/crazywhalecc",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=7.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "crazywhalecc\\Time-NLP-PHP\\": "src/"
+    }
+  }
+}
