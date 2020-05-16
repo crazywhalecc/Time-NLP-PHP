@@ -8,6 +8,11 @@ Time-NLP 的 python3 版本 https://github.com/zhanzecheng/Time_NLP
 
 Time-NLP 的 Java 版本 https://github.com/shinyke/Time-NLP
 
+## 使用
+```bash
+composer require crazywhalecc/time-nlp:dev-master
+```
+
 ## 功能说明
 本项目不依赖其他第三方库，运行环境推荐PHP7-cli以上。
 ```bash

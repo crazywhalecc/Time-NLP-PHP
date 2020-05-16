@@ -129,7 +129,8 @@ class TimeNormalizer
                 $dic["timespan"] = [date("Y-m-d H:i:s", $res[0]->time), date("Y-m-d H:i:s", $res[1]->time)];
             }
         }
-        return json_encode($dic, JSON_UNESCAPED_UNICODE);
+        return $dic;
+        //return json_encode($dic, JSON_UNESCAPED_UNICODE, JSON_PRETTY_PRINT);
     }
 
     /**
